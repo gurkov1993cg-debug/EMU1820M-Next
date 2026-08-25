@@ -1,4 +1,4 @@
-name: EMU1820M Windows Build
+name: EMU1820M Driver Build
 
 on:
   push:
@@ -10,31 +10,130 @@ jobs:
     runs-on: windows-2022
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - uses: microsoft/setup-msbuild@v2
 
       - name: Install WDK
         shell: powershell
         run: |
           choco install windowsdriverkit11 --yes --no-progress
 
-      - name: Find and build solution
+      - name: Get E-MU driver source
         shell: powershell
         run: |
-          $sln = Get-ChildItem -Recurse -Filter *.sln | Select-Object -First 1
-          if (-not $sln) {
-            throw "No Visual Studio solution (.sln) found."
-          }
-          msbuild $sln.FullName /m /p:Configuration=Release /p:Platform=x64
+          git clone https://github.com/kxproject/kx-1010-driver.git driver
 
-      - name: Collect build files
+      - name: Create modern WDK project
+        shell: powershell
+        run: |
+          cd driver
+
+          $cpp = Get-ChildItem *.cpp | ForEach-Object {
+            '    <ClCompile Include="' + $_.Name + '" />'
+          }
+
+          $rc = Get-ChildItem *.rc | ForEach-Object {
+            '    <ResourceCompile Include="' + $_.Name + '" />'
+          }
+
+          $project = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <Project DefaultTargets="Build"
+            xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+            <ItemGroup Label="ProjectConfigurations">
+              <ProjectConfiguration Include="Release|x64">
+                <Configuration>Release</Configuration>
+                <Platform>x64</Platform>
+              </ProjectConfiguration>
+            </ItemGroup>
+
+            <PropertyGroup Label="Globals">
+              <ProjectGuid>{A1820E10-1820-4000-9000-000000000001}</ProjectGuid>
+              <RootNamespace>EMU1820MNext</RootNamespace>
+              <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+            </PropertyGroup>
+
+            <Import Project="`$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+            <PropertyGroup
+              Condition="'`$(Configuration)|`$(Platform)'=='Release|x64'"
+              Label="Configuration">
+              <ConfigurationType>Driver</ConfigurationType>
+              <DriverType>WDM</DriverType>
+              <TargetVersion>Windows10</TargetVersion>
+              <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
+              <UseDebugLibraries>false</UseDebugLibraries>
+            </PropertyGroup>
+
+            <Import Project="`$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+            <ItemDefinitionGroup
+              Condition="'`$(Configuration)|`$(Platform)'=='Release|x64'">
+
+              <ClCompile>
+                <WarningLevel>Level3</WarningLevel>
+                <TreatWarningAsError>false</TreatWarningAsError>
+                <PrecompiledHeader>NotUsing</PrecompiledHeader>
+                <AdditionalIncludeDirectories>
+                  .;%(AdditionalIncludeDirectories)
+                </AdditionalIncludeDirectories>
+              </ClCompile>
+
+              <Link>
+                <AdditionalDependencies>
+                  portcls.lib;
+                  ks.lib;
+                  ksguid.lib;
+                  hal.lib;
+                  ntoskrnl.lib;
+                  wdmsec.lib;
+                  ntstrsafe.lib;
+                  Rtlver.lib;
+                  libcntpr.lib;
+                  %(AdditionalDependencies)
+                </AdditionalDependencies>
+              </Link>
+            </ItemDefinitionGroup>
+
+            <ItemGroup>
+          $($cpp -join "`r`n")
+            </ItemGroup>
+
+            <ItemGroup>
+          $($rc -join "`r`n")
+            </ItemGroup>
+
+            <Import Project="`$(VCTargetsPath)\Microsoft.Cpp.targets" />
+          </Project>
+          "@
+
+          $project | Out-File EMU1820MNext.vcxproj -Encoding utf8
+
+      - name: Build driver
+        shell: powershell
+        run: |
+          msbuild driver\EMU1820MNext.vcxproj `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64
+
+      - name: Collect files
         if: always()
         shell: powershell
         run: |
-          New-Item -ItemType Directory -Force -Path artifact
+          New-Item artifact -ItemType Directory -Force
+          Get-ChildItem driver -Recurse `
+            -Include *.sys,*.pdb,*.inf,*.cat,*.exe |
+            Copy-Item -Destination artifact -Force
+
+      - name: Upload driver
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: EMU1820M-Next-x64
+          path: artifact          New-Item -ItemType Directory -Force -Path artifact
           Get-ChildItem -Recurse -Include *.sys,*.inf,*.cat,*.exe,*.dll |
             Copy-Item -Destination artifact -Force
 
