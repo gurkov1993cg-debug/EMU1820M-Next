@@ -1,0 +1,46 @@
+name: EMU1820M Windows Build
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install WDK
+        shell: powershell
+        run: |
+          choco install windowsdriverkit11 --yes --no-progress
+
+      - name: Find and build solution
+        shell: powershell
+        run: |
+          $sln = Get-ChildItem -Recurse -Filter *.sln | Select-Object -First 1
+          if (-not $sln) {
+            throw "No Visual Studio solution (.sln) found."
+          }
+          msbuild $sln.FullName /m /p:Configuration=Release /p:Platform=x64
+
+      - name: Collect build files
+        if: always()
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path artifact
+          Get-ChildItem -Recurse -Include *.sys,*.inf,*.cat,*.exe,*.dll |
+            Copy-Item -Destination artifact -Force
+
+      - name: Upload build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: EMU1820M-Next-Windows-x64
+          path: artifact
