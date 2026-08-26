@@ -1,0 +1,103 @@
+name: Safe CI baseline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emu1820m-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Core tests and non-loadable kernel gate
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Restore pinned Microsoft WDK packages
+        shell: pwsh
+        run: nuget restore packages.config -PackagesDirectory packages
+
+      - name: Configure hardware-independent core
+        shell: pwsh
+        run: cmake -S . -B out/core -A x64 -DEMU_BUILD_TESTS=ON -DEMU_BUILD_ENGINE_PROBE=ON
+
+      - name: Build hardware-independent core
+        shell: pwsh
+        run: cmake --build out/core --config Release --parallel
+
+      - name: Run realtime contract tests
+        shell: pwsh
+        run: ctest --test-dir out/core -C Release --output-on-failure
+
+      - name: Run CI-only engine probe
+        shell: pwsh
+        run: .\out\core\Release\emu_engine_probe.exe
+
+      - name: Compile kernel safety gate
+        shell: pwsh
+        run: >-
+          msbuild driver\bringup\Emu1820SafetyGate.vcxproj
+          /m
+          /t:Build
+          /p:Configuration=Release
+          /p:Platform=x64
+          /verbosity:minimal
+
+      - name: Verify that no installable driver package exists
+        shell: pwsh
+        run: |
+          $forbidden = Get-ChildItem driver\bringup -Recurse -File -Include *.inf,*.cat
+          if ($forbidden) {
+            $forbidden | ForEach-Object { Write-Error "Forbidden installable artifact: $($_.FullName)" }
+            throw "CI baseline must not produce an installable driver package."
+          }
+
+      - name: Prepare engineering-only artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifact | Out-Null
+          Copy-Item out\core\Release\emu_engine_probe.exe artifact\
+
+          $gate = Get-ChildItem driver\bringup -Recurse -File -Filter Emu1820SafetyGate.sys | Select-Object -First 1
+          if (-not $gate) { throw "Kernel safety gate output was not found." }
+          Copy-Item $gate.FullName artifact\
+
+          $pdb = Get-ChildItem driver\bringup -Recurse -File -Filter Emu1820SafetyGate.pdb | Select-Object -First 1
+          if ($pdb) { Copy-Item $pdb.FullName artifact\ }
+
+          @"
+          ENGINEERING BUILD - DO NOT INSTALL
+
+          Emu1820SafetyGate.sys deliberately returns STATUS_NOT_SUPPORTED.
+          It contains no E-MU hardware implementation and is shipped without INF/CAT files.
+          Passing this build proves only that the pinned toolchain can compile the source.
+          "@ | Set-Content artifact\DO_NOT_INSTALL.txt -Encoding UTF8
+
+          Get-ChildItem artifact -File | ForEach-Object {
+            $hash = Get-FileHash $_.FullName -Algorithm SHA256
+            "$($hash.Hash)  $($_.Name)"
+          } | Set-Content artifact\SHA256SUMS.txt -Encoding ASCII
+
+      - name: Upload engineering build
+        uses: actions/upload-artifact@v4
+        with:
+          name: engineering-build-not-installable
+          path: artifact
+          if-no-files-found: error
+          retention-days: 7
