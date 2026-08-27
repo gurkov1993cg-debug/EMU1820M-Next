@@ -27,6 +27,13 @@ struct AudioBlockToken final {
 
 static_assert(std::is_trivially_copyable_v<AudioBlockToken>);
 
+#if defined(_MSC_VER)
+// Cache-line separation below intentionally pads the queue on MSVC. Keep every
+// other warning fatal while acknowledging this one deliberate layout choice.
+#pragma warning(push)
+#pragma warning(disable : 4324)
+#endif
+
 template <typename T, std::size_t Capacity>
 class SpscQueue final {
     static_assert(Capacity >= 2, "SPSC capacity must be at least two");
@@ -75,6 +82,10 @@ private:
     alignas(64) std::atomic<std::size_t> read_index_{0};
 };
 
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
 struct ContinuitySnapshot final {
     std::uint64_t blocks{};
     std::uint64_t frames{};
@@ -120,4 +131,3 @@ private:
 };
 
 }  // namespace emu1820
-
