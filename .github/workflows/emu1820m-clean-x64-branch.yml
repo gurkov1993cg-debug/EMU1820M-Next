@@ -1,0 +1,70 @@
+name: Clean generated MSBuild files from x64 branch
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/emu1820m-clean-x64-branch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    name: Remove generated files and refresh PR
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clean the verified x64 source branch
+        shell: pwsh
+        run: |
+          $branch = "codex/x64-transport-contract"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin $branch
+          git checkout -B $branch "origin/$branch"
+
+          @"
+          build/
+          out/
+          obj/
+          packages/
+          .vs/
+          .vscode/
+          *.user
+          *.suo
+          *.VC.db
+          *.VC.VC.opendb
+          *.pdb
+          *.obj
+          *.sys
+          *.dll
+          *.exe
+          *.cat
+          *.inf
+          *.tlog
+          *.recipe
+          *.lastbuildstate
+          "@ | Set-Content .gitignore -Encoding ASCII
+
+          git rm -r --ignore-unmatch driver/bringup/obj driver/bringup/build
+          git add -- .gitignore
+
+          $changes = @(git status --porcelain)
+          if ($changes.Count -eq 0) {
+            throw "No generated MSBuild files were found to clean."
+          }
+
+          git commit -m "Remove generated MSBuild files"
+          git push origin "HEAD:refs/heads/$branch"
+
+          "## Generated MSBuild files removed" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          "Pull request #2 will rerun its x64 checks automatically." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
