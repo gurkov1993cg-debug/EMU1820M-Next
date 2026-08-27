@@ -1,8 +1,9 @@
-/build/
-/out/
-/packages/
-/.vs/
-/.vscode/
+build/
+out/
+obj/
+packages/
+.vs/
+.vscode/
 *.user
 *.suo
 *.VC.db
@@ -14,4 +15,6 @@
 *.exe
 *.cat
 *.inf
-
+*.tlog
+*.recipe
+*.lastbuildstate

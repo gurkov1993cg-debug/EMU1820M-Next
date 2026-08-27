@@ -58,9 +58,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="hardware_ids.h" />
+  </ItemGroup>
+
+  <ItemGroup>
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
-

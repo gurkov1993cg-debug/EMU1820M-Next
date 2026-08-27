@@ -1,4 +1,12 @@
 <Project>
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+
+  <Target Name="RejectNonX64Build" BeforeTargets="PrepareForBuild" Condition="'$(Platform)' != 'x64'">
+    <Error Text="EMU1820M-Next supports x64 only. Select the x64 platform; Win32 and WOW64 components are intentionally unsupported." />
+  </Target>
+
   <Import
     Project="$(MSBuildThisFileDirectory)packages\Microsoft.Windows.WDK.x64.10.0.28000.2526\build\native\Microsoft.Windows.WDK.x64.props"
     Condition="Exists('$(MSBuildThisFileDirectory)packages\Microsoft.Windows.WDK.x64.10.0.28000.2526\build\native\Microsoft.Windows.WDK.x64.props') and '$(Platform)' == 'x64'" />
@@ -9,4 +17,3 @@
     Project="$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.props"
     Condition="Exists('$(MSBuildThisFileDirectory)packages\Microsoft.Windows.SDK.CPP.10.0.28000.2526\build\native\Microsoft.Windows.SDK.cpp.props')" />
 </Project>
-

@@ -1,5 +1,13 @@
 #include <ntddk.h>
 
+#include "hardware_ids.h"
+
+C_ASSERT(sizeof(PVOID) == 8);
+C_ASSERT(EMU1820_PCI_VENDOR_ID == 0x1102u);
+C_ASSERT(EMU1820_PCI_DEVICE_ID == 0x0004u);
+C_ASSERT(EMU1820_SUBSYSTEM_VENDOR_ID == 0x1102u);
+C_ASSERT(EMU1820_SUBSYSTEM_DEVICE_ID == 0x4001u);
+
 DRIVER_INITIALIZE DriverEntry;
 
 #ifdef ALLOC_PRAGMA
@@ -18,4 +26,3 @@ NTSTATUS DriverEntry(
     // Safety gate: this CI binary must never attach to physical hardware.
     return STATUS_NOT_SUPPORTED;
 }
-

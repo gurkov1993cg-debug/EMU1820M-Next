@@ -12,6 +12,10 @@ No later layer may weaken an earlier one.
 
 ## Planned process boundaries
 
+Every component is x64. Cubase 15 and modern VST3 plug-ins are 64-bit, so the project
+does not add a second 32-bit ASIO or plug-in bridge that could weaken testing and crash
+isolation.
+
 ### Kernel audio driver
 
 Owns PCI resources, firmware state, DMA, interrupt/DPC handling, hardware clocks,
@@ -51,3 +55,31 @@ look-ahead or excessive latency must be identified before live monitoring is arm
 The first hardware milestone targets 18 inputs and 20 outputs at 44.1/48 kHz. Higher
 sample-rate modes are separate milestones because the hardware exposes fewer channels.
 
+## Hardware identity boundary
+
+The first physical profile is deliberately restricted to the original MAEM8810 Hana
+E-MU 1010 card used with the AudioDock[M]:
+
+- PCI vendor `0x1102`
+- PCI device `0x0004`
+- subsystem vendor `0x1102`
+- subsystem device `0x4001`
+
+Newer 1010b, PCIe, CardBus, and 0404 variants must not bind to the first driver. Their
+register, firmware, and transport differences require separate reviewed profiles.
+
+## Logical versus physical DMA
+
+The current transport engine models the user-visible 18-input/20-output timeline, ring
+sizes, period wrap, and xrun rules. It does not yet claim that the hardware presents one
+interleaved 18-channel DMA engine. The physical EMU10K2/FX8010 capture topology will be
+mapped into the logical contract only after bounded BAR/I/O discovery and hardware
+validation. This prevents a convenient simulator layout from becoming an unverified
+hardware assumption.
+
+## Clock-loss behavior
+
+No hidden sample-rate conversion or invented samples are allowed. A mismatched or lost
+clock faults the physical stream, increments a visible counter, and rejects further
+period completion until the stream is stopped and the clock is valid again. VST3
+failure is different: it affects only the monitor mirror and falls back to dry audio.

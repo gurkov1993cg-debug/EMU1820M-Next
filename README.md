@@ -14,6 +14,11 @@ The repository currently contains:
 - A hardware-independent realtime contract library.
 - A lock-free single-producer/single-consumer block queue.
 - Sample-continuity and wet-monitor fail-safe tests.
+- Exact identification of the original MAEM8810 Hana PCI card used by the 1820M.
+- A logical 18-input/20-output full-duplex transport and DMA-ring model.
+- Clock-loss, xrun, ring-wrap, and duplex phase-drift accounting.
+- A non-blocking monitor fan-out proving that a stalled CPU/VST path cannot stop
+  the dry-capture ledger.
 - A kernel compilation safety gate that deliberately refuses to load.
 - A Windows GitHub Actions build using the official Microsoft WDK NuGet package.
 
@@ -21,7 +26,7 @@ The repository does **not** currently contain:
 
 - PCI enumeration or BAR/register access.
 - HANA or AudioDock firmware loading.
-- DMA, ISR/DPC, WaveRT, ASIO, MIDI, clock, or routing implementation.
+- Physical DMA, ISR/DPC, WaveRT, ASIO, MIDI, HANA clock, or routing implementation.
 - A VST3 host or graphical mixer.
 - A signed or installable driver package.
 
@@ -39,6 +44,8 @@ The monitor path must automatically fall back to dry audio.
 
 ## Full-channel target
 
+- Windows 10/11 x64 only: 64-bit kernel driver, ASIO component, Console, and
+  VST3 worker. A 32-bit/WOW64 stack is deliberately out of scope.
 - 18 inputs and 20 outputs at 44.1 or 48 kHz.
 - 24-bit capture/playback in a 32-bit transport container where required.
 - Native x64 ASIO and WaveRT/WASAPI endpoints.
@@ -47,6 +54,19 @@ The monitor path must automatically fall back to dry audio.
 
 Higher sample-rate modes have reduced hardware I/O and are not part of the first
 full-channel milestone.
+
+## Delivery milestones
+
+1. Realtime and full-duplex transport contracts with deterministic simulation.
+2. Read-only x64 PCI/PnP enumeration and bounded resource discovery.
+3. HANA/AudioDock firmware, clock, and routing bring-up with no audio endpoints.
+4. Dry capture, then full-duplex physical DMA with ISR/DPC accounting.
+5. WaveRT endpoints and native 64-bit ASIO.
+6. Separate 64-bit Console/VST3 worker with Dry, Wet, and Both modes.
+
+Each milestone must remain buildable and testable. Physical-hardware claims begin
+only after a disposable Windows test machine with the E-MU 1010 and AudioDockM is
+available.
 
 ## Build
 
@@ -62,6 +82,8 @@ cmake --build out/core --config Release
 ctest --test-dir out/core -C Release --output-on-failure
 ```
 
+Configuration fails intentionally on a 32-bit toolchain.
+
 Kernel compilation requires Visual Studio, MSBuild, and the WDK packages pinned in
 `packages.config`.
 
@@ -76,4 +98,3 @@ Kernel compilation requires Visual Studio, MSBuild, and the WDK packages pinned 
 
 E-MU and Creative are trademarks of their respective owners. This project is not
 affiliated with or endorsed by Creative Technology or E-MU Systems.
-
