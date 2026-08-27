@@ -3,9 +3,22 @@
 Passing CI is necessary but not evidence that the hardware driver works. Hardware claims
 require all tests below on a disposable Windows installation with kernel debugging.
 
+## CI transport contract
+
+Before physical hardware access is enabled, every change must prove:
+
+- x64-only configuration; a 32-bit build is rejected.
+- Exact MAEM8810 PCI/subsystem matching and rejection of adjacent Creative models.
+- 18 capture and 20 render channels at 44.1/48 kHz in a 32-bit sample container.
+- Deterministic capture/render period sizing and ring wrap.
+- A shared monotonic timeline across at least 250,000 simulated full-duplex periods.
+- Explicit xrun, duplex phase-error, and clock-loss accounting.
+- A full monitor queue drops only monitor copies while the dry ledger remains complete.
+- MSVC warnings are fatal and Address/Undefined Behavior sanitizers pass locally.
+
 ## Stage 0: safe enumeration
 
-- Confirm vendor, device, subsystem, and revision IDs.
+- Confirm the expected `1102:0004`, subsystem `1102:4001`, and physical revision ID.
 - Map PCI resources read-only where possible.
 - Verify clean start/stop and 100 cold boots.
 - Verify rollback to the legacy driver.
@@ -44,4 +57,3 @@ require all tests below on a disposable Windows installation with kernel debuggi
 - Automatic monitor fallback occurs within the configured deadline.
 - Plug-in crash, scan failure, and CPU overload never stop the dry ASIO stream.
 - `Dry`, `Wet`, and `Both` recording modes are distinguishable and sample-aligned.
-
