@@ -19,6 +19,11 @@ Before physical hardware access is enabled, every change must prove:
   interrupt, while malformed, MSI, duplicate, and unexpected resources fail closed.
 - 100,000 simulated PnP enumerate/start/stop/remove cycles preserve legal state
   transitions and counters.
+- Every one of the 64 HANA register addresses and 64 write values produces only a
+  bounded GPIO transaction at I/O offset `0x18`; malformed pulse sequences fail closed.
+- All 65,536 raw 16-bit GPIO values decode within the seven-bit HANA input domain.
+- Every HANA option byte is accepted or rejected deterministically, contradictory
+  AudioDock flags fail closed, and 100,000 read-only probe/reset cycles preserve state.
 - MSVC warnings are fatal and Address/Undefined Behavior sanitizers pass locally.
 
 ## Stage 0: safe enumeration
@@ -30,6 +35,14 @@ Before physical hardware access is enabled, every change must prove:
   and update the evidence before changing the parser.
 - Verify clean start/stop and 100 cold boots.
 - Verify rollback to the legacy driver.
+
+## Stage 0.5: read-only HANA probe
+
+- Enable only the reviewed 16-bit GPIO executor after Stage 0 resource evidence matches.
+- Record the raw GPIO words and decoded HANA identity/revision/option snapshot.
+- Confirm the Alice2 identity and classify AudioDockM as absent, offline, or online.
+- Keep dock power, firmware, clock, mute, routing, DMA, and interrupts disabled.
+- Repeat 100 cold probes with bounded timing and no unexplained option-bit changes.
 
 ## Stage 1: clocks and firmware
 

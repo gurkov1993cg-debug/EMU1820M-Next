@@ -1,3 +1,4 @@
+#include "emu/hana_contract.hpp"
 #include "emu/realtime_contract.hpp"
 #include "emu/transport_contract.hpp"
 
@@ -6,6 +7,23 @@
 
 int main() {
     constexpr std::uint64_t kProbePeriods = 100'000;
+    const auto hana_read = emu1820::make_hana_read_transaction(
+        static_cast<std::uint8_t>(emu1820::HanaRegister::identity));
+    const auto hana_probe = emu1820::validate_hana_probe_snapshot({
+        emu1820::kHanaExpectedAlice2Identity,
+        1,
+        0,
+        emu1820::kHanaOptionDockOnline,
+        1,
+        0,
+        0,
+    });
+    if (!hana_read ||
+        !emu1820::validate_hana_transaction(hana_read.transaction.view()) ||
+        !hana_probe) {
+        return EXIT_FAILURE;
+    }
+
     emu1820::FullDuplexEngine engine;
     if (!engine.prepare({48'000, 18, 20, 4, 64, 8},
                         emu1820::ClockSource::internal)) {
@@ -44,7 +62,8 @@ int main() {
               << " capture_xruns=" << counters.capture_xruns
               << " render_xruns=" << counters.render_xruns
               << " monitor_drops=" << fanout.monitor_drops()
-              << " dry_fallbacks=" << monitor.fallback_count() << '\n';
+              << " dry_fallbacks=" << monitor.fallback_count()
+              << " hana_probe_ops=" << hana_read.transaction.count << '\n';
 
     return state.discontinuities == 0 && counters.capture_xruns == 0 &&
                    counters.render_xruns == 0 &&

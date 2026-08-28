@@ -55,10 +55,12 @@
 
   <ItemGroup>
     <ClCompile Include="driver.c" />
+    <ClCompile Include="hana_contract.c" />
     <ClCompile Include="pnp_contract.c" />
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="hana_contract.h" />
     <ClInclude Include="hardware_ids.h" />
     <ClInclude Include="pnp_contract.h" />
   </ItemGroup>
