@@ -19,12 +19,19 @@ The repository currently contains:
 - Clock-loss, xrun, ring-wrap, and duplex phase-drift accounting.
 - A non-blocking monitor fan-out proving that a stalled CPU/VST path cannot stop
   the dry-capture ledger.
-- A kernel compilation safety gate that deliberately refuses to load.
+- A fail-closed PCI/PnP contract for the exact Windows Hardware ID
+  `PCI\VEN_1102&DEV_0004&SUBSYS_40011102`.
+- Paired raw/translated resource validation for one 64-byte PCI I/O range and
+  one line-based interrupt; MSI and unexpected resources are rejected.
+- A deterministic PnP lifecycle model exercised through 100,000
+  enumerate/start/stop/remove cycles.
+- A dormant WDK resource parser inside a kernel compilation safety gate that
+  deliberately refuses to load and performs no register access.
 - A Windows GitHub Actions build using the official Microsoft WDK NuGet package.
 
 The repository does **not** currently contain:
 
-- PCI enumeration or BAR/register access.
+- Live PCI/PnP attachment, I/O-port access, or register access.
 - HANA or AudioDock firmware loading.
 - Physical DMA, ISR/DPC, WaveRT, ASIO, MIDI, HANA clock, or routing implementation.
 - A VST3 host or graphical mixer.
@@ -58,7 +65,9 @@ full-channel milestone.
 ## Delivery milestones
 
 1. Realtime and full-duplex transport contracts with deterministic simulation.
-2. Read-only x64 PCI/PnP enumeration and bounded resource discovery.
+2. Read-only x64 PCI/PnP enumeration and bounded resource discovery. The
+   hardware-independent contract and dormant WDK parser are now present; live
+   enumeration still requires the hardware test milestone.
 3. HANA/AudioDock firmware, clock, and routing bring-up with no audio endpoints.
 4. Dry capture, then full-duplex physical DMA with ISR/DPC accounting.
 5. WaveRT endpoints and native 64-bit ASIO.
@@ -72,7 +81,7 @@ available.
 
 GitHub Actions builds and tests the hardware-independent core and compiles a
 non-loadable kernel safety gate. The engineering artifact intentionally contains no
-INF file and cannot claim the real E-MU PCI hardware ID.
+INF file and cannot bind to the real E-MU PCI hardware ID.
 
 Local user-mode build:
 

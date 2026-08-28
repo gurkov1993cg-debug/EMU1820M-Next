@@ -7,6 +7,18 @@ It is a compile/toolchain gate, not an audio driver. `DriverEntry` deliberately 
 PCI hardware ID. This prevents a CI artifact from accidentally replacing the working
 legacy driver.
 
+The gate now also compiles the first x64 PCI/PnP boundary:
+
+- exact base Hardware ID matching for
+  `PCI\VEN_1102&DEV_0004&SUBSYS_40011102` inside a bounded `REG_MULTI_SZ`;
+- strict pairing of raw and translated `CM_RESOURCE_LIST` entries;
+- acceptance of exactly one `0x40`-byte I/O-port range and one line interrupt;
+- rejection of MSI, memory, DMA, private, duplicate, missing, mismatched, and
+  oversized resource layouts.
+
+These routines are intentionally dormant. There is no `AddDevice`, PortCls adapter,
+dispatch table, INF, register read/write, interrupt connection, or DMA allocation.
+
 The first hardware-capable milestone must not be enabled until all of the following
 exist:
 
@@ -15,4 +27,3 @@ exist:
 3. BAR mapping with bounds checks and no audio streaming.
 4. Kernel-debug access to a disposable Windows test installation.
 5. A reviewed rollback procedure to the legacy driver.
-
