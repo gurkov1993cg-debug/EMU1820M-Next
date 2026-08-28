@@ -89,6 +89,19 @@ partial descriptors. Only translated values may be retained for future register 
 interrupt operations. Passing this boundary still does not authorize register access:
 the current safety gate returns `STATUS_NOT_SUPPORTED` from `DriverEntry`.
 
+## HANA protocol boundary
+
+The portable HANA contract can describe only 16-bit operations at Audigy GPIO offset
+`0x18` inside the validated 64-byte I/O window. It accepts six-bit register addresses,
+six-bit write values, and the fixed bounded pulse/delay sequence used by the interface.
+The first probe is read-only at the policy level and validates HANA identity/revisions
+and AudioDock presence before any later phase may request firmware or clock changes.
+
+The WDK mirror builds the transaction descriptions but does not execute them. There is
+no port-I/O primitive in the safety-gate project, and `DriverEntry` remains inert. A
+future executor must be separately reviewed for IRQL, serialization, cancellation, and
+PnP stop/remove behavior before one physical read is enabled.
+
 ## Logical versus physical DMA
 
 The current transport engine models the user-visible 18-input/20-output timeline, ring

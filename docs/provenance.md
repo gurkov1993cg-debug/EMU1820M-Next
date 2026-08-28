@@ -20,6 +20,11 @@ The Linux sources are GPL-2.0-only. Numerical hardware identities and externally
 observable interface facts are independently represented here; implementation code is
 not transplanted.
 
+The HANA transaction/register facts were rechecked against upstream Linux commit
+`1b78070aaef63512688aebfbc82365ef9d6660f1`. The project represents the externally
+observable GPIO protocol as its own bounded operation contract; it does not copy Linux
+control flow, locking, firmware-loading, or driver integration code.
+
 ## Windows audio driver model
 
 - `IRP_MN_START_DEVICE` raw and translated resources:
