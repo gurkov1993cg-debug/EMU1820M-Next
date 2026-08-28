@@ -22,6 +22,17 @@ not transplanted.
 
 ## Windows audio driver model
 
+- `IRP_MN_START_DEVICE` raw and translated resources:
+  <https://learn.microsoft.com/windows-hardware/drivers/kernel/irp-mn-start-device>
+- Starting a device and retaining translated resources:
+  <https://learn.microsoft.com/windows-hardware/drivers/kernel/starting-a-device-in-a-function-driver>
+- `CM_RESOURCE_LIST` layout:
+  <https://learn.microsoft.com/windows-hardware/drivers/ddi/wdm/ns-wdm-_cm_resource_list>
+- Hardware ID retrieval with `IoGetDeviceProperty`:
+  <https://learn.microsoft.com/windows-hardware/drivers/ddi/wdm/nf-wdm-iogetdeviceproperty>
+- PortCls adapter-driver initialization:
+  <https://learn.microsoft.com/windows-hardware/drivers/ddi/portcls/nf-portcls-pcinitializeadapterdriver>
+
 - Microsoft WaveRT design guidance:
   <https://learn.microsoft.com/windows-hardware/drivers/audio/developing-a-wavert-miniport-driver>
 - WaveRT miniport interfaces:

@@ -68,6 +68,27 @@ E-MU 1010 card used with the AudioDock[M]:
 Newer 1010b, PCIe, CardBus, and 0404 variants must not bind to the first driver. Their
 register, firmware, and transport differences require separate reviewed profiles.
 
+The corresponding first-profile Windows Hardware ID is exactly
+`PCI\VEN_1102&DEV_0004&SUBSYS_40011102`. A revision-qualified ID may appear in the
+device's `REG_MULTI_SZ`, but the driver must find the exact base entry rather than
+accepting a prefix or a generic Creative device ID.
+
+## PCI/PnP resource boundary
+
+`IRP_MN_START_DEVICE` supplies paired raw and translated resource lists. The first
+profile accepts only:
+
+- one PCI I/O-port descriptor with an exact `0x40`-byte span in both lists;
+- one conventional line interrupt with a nonzero translated level, vector, and
+  affinity; and
+- optional paired null descriptors.
+
+The parser rejects mismatched list shapes, duplicate descriptors, MSI, memory BARs,
+DMA resources, private descriptors, zero or overflowing port ranges, and more than 16
+partial descriptors. Only translated values may be retained for future register and
+interrupt operations. Passing this boundary still does not authorize register access:
+the current safety gate returns `STATUS_NOT_SUPPORTED` from `DriverEntry`.
+
 ## Logical versus physical DMA
 
 The current transport engine models the user-visible 18-input/20-output timeline, ring

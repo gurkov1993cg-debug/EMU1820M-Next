@@ -14,12 +14,20 @@ Before physical hardware access is enabled, every change must prove:
 - A shared monotonic timeline across at least 250,000 simulated full-duplex periods.
 - Explicit xrun, duplex phase-error, and clock-loss accounting.
 - A full monitor queue drops only monitor copies while the dry ledger remains complete.
+- Exact case-insensitive Windows Hardware ID matching with no prefix acceptance.
+- Paired raw/translated PnP lists accept only one 64-byte I/O range and one line
+  interrupt, while malformed, MSI, duplicate, and unexpected resources fail closed.
+- 100,000 simulated PnP enumerate/start/stop/remove cycles preserve legal state
+  transitions and counters.
 - MSVC warnings are fatal and Address/Undefined Behavior sanitizers pass locally.
 
 ## Stage 0: safe enumeration
 
 - Confirm the expected `1102:0004`, subsystem `1102:4001`, and physical revision ID.
-- Map PCI resources read-only where possible.
+- Capture and compare the actual raw and translated `IRP_MN_START_DEVICE` resources
+  without touching any device register.
+- Confirm exactly one `0x40`-byte I/O range and one line interrupt, or stop bring-up
+  and update the evidence before changing the parser.
 - Verify clean start/stop and 100 cold boots.
 - Verify rollback to the legacy driver.
 

@@ -10,6 +10,7 @@ option(EMU_BUILD_TESTS "Build hardware-independent realtime tests" ON)
 option(EMU_BUILD_ENGINE_PROBE "Build the CI-only engine probe" ON)
 
 add_library(emu_realtime_core STATIC
+    core/src/pnp_contract.cpp
     core/src/realtime_contract.cpp
     core/src/transport_contract.cpp
 )
@@ -66,4 +67,16 @@ if(EMU_BUILD_TESTS)
     endif()
 
     add_test(NAME emu_transport_tests COMMAND emu_transport_tests)
+
+    add_executable(emu_pnp_contract_tests tests/pnp_contract_tests.cpp)
+    target_link_libraries(emu_pnp_contract_tests PRIVATE emu_realtime_core Threads::Threads)
+    target_compile_features(emu_pnp_contract_tests PRIVATE cxx_std_20)
+
+    if(MSVC)
+        target_compile_options(emu_pnp_contract_tests PRIVATE /W4 /WX /permissive- /EHsc)
+    else()
+        target_compile_options(emu_pnp_contract_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+
+    add_test(NAME emu_pnp_contract_tests COMMAND emu_pnp_contract_tests)
 endif()
